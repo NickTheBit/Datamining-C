@@ -3,7 +3,7 @@
 #include <math.h>
 #include <time.h>
 
-#define BUFFER_SIZE 10
+#define BUFFER_SIZE 500
 
 struct clusters {
 	int space;
@@ -27,7 +27,9 @@ int main(int argc,char **argv) {
 	int finished = 0;		// Variable for termination
 	int minCluster;			// Temporary storage of the closest cluster
 	int iterCounter = 0;	// Iterations counter
+	int *memcheck;			// Memory allocation confirmed
 	clock_t recs[2];		// Vars for timing
+	int dbg = 0;			// Variable for debugging printf("Debug: %d",dbg++);
 
 	// File retrieval
 	if (argc == 3) {
@@ -60,6 +62,7 @@ int main(int argc,char **argv) {
 			elementCounter++;
 		fscanf(f,"%c",&temp);
 	}
+	
 	rewind(f);
 
 	printf("Detected:\n\tElements: %d\n\tDimentions: %d\n",elementCounter,dimentions);
@@ -68,11 +71,11 @@ int main(int argc,char **argv) {
 	recs[0] = clock();
 	
 	// Allocating space
-	double **elements = malloc(elementCounter * sizeof(double));
+	double **elements =(double**) malloc(elementCounter * sizeof(double*));
 	for (i=0; i<elementCounter; i++)
-		elements[i] = malloc(dimentions * sizeof(double));
+		elements[i] =(double*) malloc(dimentions * sizeof(double));
 
-	// Inserting data in RAM
+	// // Inserting data in RAM
 	for (i = 0; i < elementCounter; i++) {
 		for (j=0; j<dimentions; j++)
 			fscanf(f,"%lf",&elements[i][j]);
@@ -81,16 +84,16 @@ int main(int argc,char **argv) {
 	// Creating and initialising cluster vars
 	struct clusters clu[clusterNum];
 	for (i=0; i<clusterNum; i++) {
-		clu[i].space = BUFFER_SIZE;
+		clu[i].space = 0 + BUFFER_SIZE;
 		clu[i].elementNum = 0;
-		clu[i].sum = calloc(dimentions,sizeof(double));
-		clu[i].elements = malloc(BUFFER_SIZE * sizeof(int));
+		clu[i].sum =(double*) calloc(dimentions,sizeof(double));
+		clu[i].elements = (int*)malloc(BUFFER_SIZE * sizeof(int));
 	}
 
 	// Generating initial centroids and priming exCentroid for termination check
 	for (i=0; i<clusterNum; i++) {
-		clu[i].Centroid = calloc(dimentions,sizeof(double));
-		clu[i].exCentroid = calloc(dimentions,sizeof(double));
+		clu[i].Centroid =(double*) calloc(dimentions,sizeof(double));
+		clu[i].exCentroid = (double*)calloc(dimentions,sizeof(double));
 		for (j=0; j<dimentions; j++)
 			clu[i].Centroid[j] = elements[rand() % elementCounter][j];
 	}
@@ -118,8 +121,8 @@ int main(int argc,char **argv) {
 				}
 			}
 			// If the cluster doesnt have enouph space we are allocating some
-			if (clu[minCluster].space < clu[minCluster].elementNum) {
-				clu[minCluster].elements = calloc(BUFFER_SIZE,sizeof(int));
+			if (clu[minCluster].space <= clu[minCluster].elementNum) {
+				clu[minCluster].elements =(int*) realloc(clu[minCluster].elements,clu[minCluster].space * sizeof(int) + BUFFER_SIZE * sizeof(int));
 				clu[minCluster].space += BUFFER_SIZE;
 			}
 
